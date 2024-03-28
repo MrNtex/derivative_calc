@@ -1,5 +1,6 @@
 #[derive(PartialEq)]
 enum Operator {
+    No,
     Pow,
     Sin,
     Cos,
@@ -31,8 +32,13 @@ fn main() {
         let mut result = split_expression(equasion.clone());
 
         for i in 0..result.len() {
-            println!("{}", result[i].clone());
-            println!("{}", calculate_simple_derivative(result[i].clone()));
+            //println!("{}", result[i].clone());
+            let c = result[i].clone().chars().next().unwrap();
+            if c == '+' || c == '-' || c == '(' || c== ')' {
+                println!("{}", result[i].clone());
+            }else{
+                println!("{}", calculate_simple_derivative(result[i].clone()));
+            }
         }
     }
 
@@ -64,11 +70,16 @@ fn calculate_simple_derivative(expression: String) -> String {
     let mut result = String::new();
     let mut cooficient = String::new();
     let mut power = String::new();
-    let mut operator = Operator::Pow;
+    let mut operator = Operator::No;
     let mut seen_operator = false;
 
     let mut chain_rule = String::new();
+
+    let mut seen_x = false;
     for c in expression.chars(){
+        if c == 'x' {
+            seen_x = true;
+        }
         if !seen_operator{
             if c.is_numeric(){
                 cooficient.push(c);
@@ -98,13 +109,18 @@ fn calculate_simple_derivative(expression: String) -> String {
             }
         }
     }
-    println!("Cooficient: {}, power: {}", cooficient, power);
+    //println!("Cooficient: {}, power: {}", cooficient, power);
     let mut new_cooficient = 1;
     if !cooficient.is_empty() {
         new_cooficient = cooficient.parse::<i32>().unwrap();
     }
+    if !seen_x {
+        return "".to_string();
+    }
     match operator {
-        
+        Operator::No => {
+            return cooficient;
+        }
         Operator::Pow => {
             let new_power = power.parse::<i32>().unwrap() - 1;
 
