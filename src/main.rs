@@ -76,7 +76,24 @@ fn calculate_simple_derivative(expression: String) -> String {
     let mut chain_rule = String::new();
 
     let mut seen_x = false;
+
+    let mut left = String::new();
+    let mut right = String::new();
+    let mut mul = false;
+    let mut div = false;
     for c in expression.chars(){
+        if !mul && !div{
+            if c == '*' {
+                mul = true;
+                continue;
+            }else if c == '/' {
+                div = true;
+                continue;
+            }
+            left.push(c);
+        } else{
+            right.push(c);
+        }
         if c == 'x' {
             seen_x = true;
         }
@@ -85,7 +102,8 @@ fn calculate_simple_derivative(expression: String) -> String {
                 cooficient.push(c);
             }else if c == 'x' {
                 continue;
-            }else{
+            }
+            else{
                 seen_operator = true;
                 match c {
                     'p' => operator = Operator::Pow,
@@ -117,6 +135,12 @@ fn calculate_simple_derivative(expression: String) -> String {
     if !seen_x {
         return "".to_string();
     }
+    if div {
+        return format!("({})*({})-(({})*({}))/({})^2", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone()), right.clone()).to_string();
+    }
+    if mul {
+        return format!("({})*({})+({})*({})", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone())).to_string();
+    }
     match operator {
         Operator::No => {
             return cooficient;
@@ -137,6 +161,7 @@ fn calculate_simple_derivative(expression: String) -> String {
             result.push_str("cos(");
             result.push_str(&chain_rule);
             result.push_str(")");
+            result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Cos => {
             result.push_str("-");
@@ -144,35 +169,79 @@ fn calculate_simple_derivative(expression: String) -> String {
             result.push_str("sin(");
             result.push_str(&chain_rule);
             result.push_str(")");
+            result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Tan => {
             result.push_str(&cooficient);
             result.push_str("sec^2(");
             result.push_str(&chain_rule);
             result.push_str(")");
+            result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Log => {
             result.push_str(&cooficient);
             result.push_str("1/");
             result.push_str(&chain_rule);
+            result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Ln => {
             result.push_str(&cooficient);
             result.push_str("1/");
             result.push_str(&chain_rule);
+            result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Sqrt => {
             result.push_str(&cooficient);
             result.push_str("1/(2*sqrt(");
             result.push_str(&chain_rule);
             result.push_str(")");
+            result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Exp => {
             result.push_str(&cooficient);
             result.push_str("exp(");
             result.push_str(&chain_rule);
             result.push_str(")");
+            result.push_str(&calculate_simple_derivative(chain_rule));
         }
+    }
+    result
+}
+
+fn clean_expression(expression: String, prevSign: String) -> String {
+    let mut sign = 1;
+    if prevSign == "-" {
+        sign = -1;
+    }
+    let mut opened_brackets = 0;
+    let mut result = String::new();
+
+    let mut cooficient = 1;
+    let mut numCluster = false;
+    for c in expression.chars() {
+        if c.is_numeric() {
+            cooficient *= c.to_string().parse::<i32>().unwrap();
+            numCluster = true;
+        }else{
+            numCluster = false;
+        }
+        if c == ' ' {
+            continue;
+        }
+        if c == '-' {
+            sign = -sign;
+        }
+        if c == '+' {
+            continue;
+        }
+        if c == '(' {
+            opened_brackets += 1;
+        }
+        if c == ')' {
+            opened_brackets -= 1;
+        }
+        
+        result.push(c);
     }
     result
 }
