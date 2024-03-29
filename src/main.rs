@@ -196,7 +196,7 @@ fn calculate_simple_derivative(expression: &String) -> String {
         }
         Operator::Tan => {
             result.push_str(&cooficient);
-            result.push_str("sec^2(");
+            result.push_str("sec^(2)(");
             result.push_str(&chain_rule);
             result.push_str(")");
             result.push_str(&calculate_simple_derivative(&chain_rule));
