@@ -45,17 +45,17 @@ fn main() {
         equasion = args[2].clone();
         let mut result = split_expression(equasion.clone());
         
-        let mut last_sign = "+".to_string();
+        let mut last_sign = '+';
         println!("Derivative of {} is:", equasion);
         let mut output = String::new(); // Initialize an empty String to accumulate the outputs
 
         for i in 0..result.len() {
             let c = result[i].clone().chars().next().unwrap();
             if c == '+' || c == '-'  {
-                last_sign = result[i].clone(); // Store the last sign encountered
+                last_sign = c; // Store the last sign encountered
             } else {
                 // Instead of printing, append the output to the `output` String
-                output += &format!("{}", clean_expression(calculate_simple_derivative(result[i].clone()), last_sign.clone()));
+                output += &format!("{}", clean_expression(calculate_simple_derivative(&result[i]), last_sign));
             }
         }
         
@@ -78,8 +78,7 @@ fn split_expression(expression: String) -> Vec<String> {
     for c in expression.chars() {
         if c == '+' || c == '-' || c == '(' || c== ')' {
             if !temp.is_empty() {
-                result.push(temp.clone());
-                temp.clear();
+                result.push(std::mem::take(&mut temp));
             }
             result.push(c.to_string());
         } else {
@@ -87,11 +86,11 @@ fn split_expression(expression: String) -> Vec<String> {
         }
     }
     if !temp.is_empty() {
-        result.push(temp.clone());
+        result.push(temp);
     }
     result
 }
-fn calculate_simple_derivative(expression: String) -> String {
+fn calculate_simple_derivative(expression: &String) -> String {
     let mut result = String::new();
     let mut cooficient = String::new();
     let mut power = String::new();
@@ -161,10 +160,10 @@ fn calculate_simple_derivative(expression: String) -> String {
         return "".to_string();
     }
     if div {
-        return format!("(({})*({})-(({})*({}))/({})^2)", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone()), right.clone()).to_string();
+        return format!("(({})*({})-(({})*({}))/({})^2)", calculate_simple_derivative(&left), &right, &left, calculate_simple_derivative(&right), &right).to_string();
     }
     if mul {
-        return format!("(({})*({})+({})*({}))", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone())).to_string();
+        return format!("(({})*({})+({})*({}))", calculate_simple_derivative(&left), &right, &left, calculate_simple_derivative(&right)).to_string();
     }
     match operator {
         Operator::No => {
@@ -187,7 +186,7 @@ fn calculate_simple_derivative(expression: String) -> String {
             result.push_str("cos(");
             result.push_str(&chain_rule);
             result.push_str(")");
-            result.push_str(&calculate_simple_derivative(chain_rule));
+            result.push_str(&calculate_simple_derivative(&chain_rule));
         }
         Operator::Cos => {
             result.push_str("-");
@@ -195,14 +194,14 @@ fn calculate_simple_derivative(expression: String) -> String {
             result.push_str("sin(");
             result.push_str(&chain_rule);
             result.push_str(")");
-            result.push_str(&calculate_simple_derivative(chain_rule));
+            result.push_str(&calculate_simple_derivative(&chain_rule));
         }
         Operator::Tan => {
             result.push_str(&cooficient);
             result.push_str("sec^2(");
             result.push_str(&chain_rule);
             result.push_str(")");
-            result.push_str(&calculate_simple_derivative(chain_rule));
+            result.push_str(&calculate_simple_derivative(&chain_rule));
         }
         Operator::Log => {
             result.push_str("(");
@@ -211,7 +210,7 @@ fn calculate_simple_derivative(expression: String) -> String {
             result.push_str(&chain_rule);
             result.push_str("ln(10))");
             result.push_str(")");
-            result.push_str(&calculate_simple_derivative(chain_rule));
+            result.push_str(&calculate_simple_derivative(&chain_rule));
         }
         Operator::Ln => {
             result.push_str("(");
@@ -219,29 +218,29 @@ fn calculate_simple_derivative(expression: String) -> String {
             result.push_str("/");
             result.push_str(&chain_rule);
             result.push_str(")");
-            result.push_str(&calculate_simple_derivative(chain_rule));
+            result.push_str(&calculate_simple_derivative(&chain_rule));
         }
         Operator::Sqrt => {
             result.push_str(&cooficient);
             result.push_str("1/(2*sqrt(");
             result.push_str(&chain_rule);
             result.push_str(")");
-            result.push_str(&calculate_simple_derivative(chain_rule));
+            result.push_str(&calculate_simple_derivative(&chain_rule));
         }
         Operator::Exp => {
             result.push_str(&cooficient);
             result.push_str("exp(");
             result.push_str(&chain_rule);
             result.push_str(")");
-            result.push_str(&calculate_simple_derivative(chain_rule));
+            result.push_str(&calculate_simple_derivative(&chain_rule));
         }
     }
     result
 }
 
-fn clean_expression(expression: String, prevSign: String) -> String {
+fn clean_expression(expression: String, prev_sign: char) -> String {
     let mut sign = 1;
-    if prevSign == "-" {
+    if prev_sign == '-' {
         sign = -1;
     }
     let mut opened_brackets = 0;
