@@ -1,3 +1,5 @@
+use colored::*;
+
 #[derive(PartialEq)]
 enum Operator {
     No,
@@ -20,7 +22,19 @@ fn main() {
         std::process::exit(1);
     }
     if (args[1] == "-h") || (args[1] == "--help") {
-        println!("Usage: {} <Equasion>", args[0]);
+        println!("Usage: {} -e <Equasion> ({})", args[0], "don't use spaces in the equasion".yellow());
+        println!("Example: {} -e 2x^2+3x+4", args[0]);
+        println!("");
+        println!("Operators:");
+        println!("{}  - Pow: x^y", "p".cyan());
+        println!("{}  - Sin: sin(x)", "s".cyan());
+        println!("{}  - Cos: cos(x)", "c".cyan());
+        println!("{}  - Tan: tan(x)", "t".cyan());
+        println!("{}  - Log: log(x)", "l".cyan());
+        println!("{}  - Ln: ln(x)", "n".cyan());
+        println!("{}  - Sqrt: sqrt(x)", "r".cyan());
+        println!("{}  - Exp: exp(x)", "e".cyan());
+        
         std::process::exit(0);
     }
     if(args[1] == "-e") || (args[1] == "--equasion") {
@@ -30,16 +44,27 @@ fn main() {
         }
         equasion = args[2].clone();
         let mut result = split_expression(equasion.clone());
+        
+        let mut last_sign = "+".to_string();
+        println!("Derivative of {} is:", equasion);
+        let mut output = String::new(); // Initialize an empty String to accumulate the outputs
 
         for i in 0..result.len() {
-            //println!("{}", result[i].clone());
             let c = result[i].clone().chars().next().unwrap();
-            if c == '+' || c == '-' || c == '(' || c== ')' {
-                println!("{}", result[i].clone());
-            }else{
-                println!("{}", calculate_simple_derivative(result[i].clone()));
+            if c == '+' || c == '-'  {
+                last_sign = result[i].clone(); // Store the last sign encountered
+            } else {
+                // Instead of printing, append the output to the `output` String
+                output += &format!("{}", clean_expression(calculate_simple_derivative(result[i].clone()), last_sign.clone()));
             }
         }
+        
+        if output.starts_with('+') {
+            output = output[1..].to_string();
+        }
+
+
+        println!("{}", output); // Print the accumulated output
     }
 
     if equasion.is_empty() {
@@ -136,10 +161,10 @@ fn calculate_simple_derivative(expression: String) -> String {
         return "".to_string();
     }
     if div {
-        return format!("({})*({})-(({})*({}))/({})^2", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone()), right.clone()).to_string();
+        return format!("(({})*({})-(({})*({}))/({})^2)", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone()), right.clone()).to_string();
     }
     if mul {
-        return format!("({})*({})+({})*({})", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone())).to_string();
+        return format!("(({})*({})+({})*({}))", calculate_simple_derivative(left.clone()), right.clone(), left.clone(), calculate_simple_derivative(right.clone())).to_string();
     }
     match operator {
         Operator::No => {
@@ -152,8 +177,9 @@ fn calculate_simple_derivative(expression: String) -> String {
             if new_power == 1 {
                 result.push_str("x");
             }else{
-                result.push_str("x^");
+                result.push_str("x^(");
                 result.push_str(&new_power.to_string());
+                result.push_str(")");
             }
         }
         Operator::Sin => {
@@ -179,15 +205,20 @@ fn calculate_simple_derivative(expression: String) -> String {
             result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Log => {
-            result.push_str(&cooficient);
-            result.push_str("1/");
+            result.push_str("(");
+            result.push_str(&new_cooficient.to_string());
+            result.push_str("/(");
             result.push_str(&chain_rule);
+            result.push_str("ln(10))");
+            result.push_str(")");
             result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Ln => {
-            result.push_str(&cooficient);
-            result.push_str("1/");
+            result.push_str("(");
+            result.push_str(&new_cooficient.to_string());
+            result.push_str("/");
             result.push_str(&chain_rule);
+            result.push_str(")");
             result.push_str(&calculate_simple_derivative(chain_rule));
         }
         Operator::Sqrt => {
@@ -217,23 +248,29 @@ fn clean_expression(expression: String, prevSign: String) -> String {
     let mut result = String::new();
 
     let mut cooficient = 1;
-    let mut numCluster = false;
+    let mut temp = String::new();
+    
     for c in expression.chars() {
-        if c.is_numeric() {
-            cooficient *= c.to_string().parse::<i32>().unwrap();
-            numCluster = true;
-        }else{
-            numCluster = false;
+        if c.is_numeric() && opened_brackets == 0{
+            temp.push(c);
+            continue;
+        }else if !temp.is_empty() {
+            cooficient *= temp.parse::<i32>().unwrap();
+            temp.clear();
         }
         if c == ' ' {
             continue;
         }
-        if c == '-' {
-            sign = -sign;
+        if opened_brackets == 0{
+            if c == '-' {
+                sign = -sign;
+                continue;
+            }
+            if c == '+' {
+                continue;
+            }
         }
-        if c == '+' {
-            continue;
-        }
+        
         if c == '(' {
             opened_brackets += 1;
         }
@@ -242,6 +279,18 @@ fn clean_expression(expression: String, prevSign: String) -> String {
         }
         
         result.push(c);
+    }
+    if !temp.is_empty() {
+        cooficient *= temp.parse::<i32>().unwrap();
+    }
+    
+    if cooficient != 1 {
+        result = format!("{}{}", cooficient, result);
+    }
+    if sign == -1 {
+        result = format!("-{}", result);
+    }else{
+        result = format!("+{}", result);
     }
     result
 }
