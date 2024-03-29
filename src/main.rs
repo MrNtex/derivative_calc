@@ -15,7 +15,6 @@ enum Operator {
 fn main() {
     let args: Vec<String> = std::env::args().collect();
 
-    let mut equasion = String::new();
 
     if args.len() < 2 {
         println!("Usage: {} <Equasion>", args[0]);
@@ -42,11 +41,12 @@ fn main() {
             println!("Usage: {} -e <Equasion>", args[0]);
             std::process::exit(1);
         }
-        equasion = args[2].clone();
-        let mut result = split_expression(equasion.clone());
+        let equasion = &args[2];
+        println!("Derivative of {} is:", equasion);
+        let result = split_expression(equasion);
         
         let mut last_sign = '+';
-        println!("Derivative of {} is:", equasion);
+        
         let mut output = String::new(); // Initialize an empty String to accumulate the outputs
 
         for i in 0..result.len() {
@@ -67,12 +67,10 @@ fn main() {
         println!("{}", output); // Print the accumulated output
     }
 
-    if equasion.is_empty() {
-        std::process::exit(1);
-    }
+    
 }
 
-fn split_expression(expression: String) -> Vec<String> {
+fn split_expression(expression: &String) -> Vec<String> {
     let mut result: Vec<String> = Vec::new();
     let mut temp = String::new();
     for c in expression.chars() {
