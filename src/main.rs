@@ -165,6 +165,9 @@ fn calculate_simple_derivative(expression: &String) -> String {
     }
     match operator {
         Operator::No => {
+            if cooficient.is_empty(){
+                return "1".to_string();
+            }
             return cooficient;
         }
         Operator::Pow => {
@@ -241,11 +244,19 @@ fn clean_expression(expression: String, prev_sign: char) -> String {
     if prev_sign == '-' {
         sign = -1;
     }
+    if !expression.is_empty() && expression.chars().next().unwrap() == '1' && expression.len() == 1{
+        // If the expression is just x, return 1 (has to be done this way becausethe function ignores cooficient of 1)
+        if sign == -1 {
+            return "-1".to_string();
+        }
+        return "+1".to_string();
+    }
     let mut opened_brackets = 0;
     let mut result = String::new();
 
     let mut cooficient = 1;
     let mut temp = String::new();
+
     
     for c in expression.chars() {
         if c.is_numeric() && opened_brackets == 0{
@@ -274,7 +285,6 @@ fn clean_expression(expression: String, prev_sign: char) -> String {
         if c == ')' {
             opened_brackets -= 1;
         }
-        
         result.push(c);
     }
     if !temp.is_empty() {
